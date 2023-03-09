@@ -8,52 +8,37 @@
 import UIKit
 
 class ViewController: UIViewController {
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 20, leading: 20, bottom: 20, trailing: 20)
         view.backgroundColor = .white
         setupHierarchy()
         setupLayout()
     }
+
+    //MARK: - Elements
     
     let animator = UIViewPropertyAnimator(duration: 0.3, curve: .linear)
-    
-    //MARK: - Elements
+    let squareSide: CGFloat = 75
     
     lazy var square: UIView = {
         let square = UIView()
-        let squareSide = view.frame.width * 0.2
-        square.frame = CGRect(
-            x: view.layoutMargins.left,
-            y: 100,
-            width: squareSide,
-            height: squareSide
-        )
+        let scale = CGFloat(1.5)
         square.backgroundColor = .systemOrange
         square.layer.cornerRadius = 5
-        let endPoint = CGRect(
-            x: view.frame.width - square.frame.width * 1.5,
-            y: square.frame.origin.y,
-            width: square.frame.width,
-            height: square.frame.height
-        )
-        animator.pausesOnCompletion = true
-        animator.addAnimations {
-            square.frame = endPoint
-            square.transform = CGAffineTransform(rotationAngle: CGFloat.pi / 2).scaledBy(x: 1.5, y: 1.5)
+        animator.addAnimations { [self] in
+            square.frame = square.frame.offsetBy(
+                dx: view.frame.width - squareSide * scale - view.layoutMargins.right,
+                dy: 0
+            )
+            square.transform = CGAffineTransform(rotationAngle: CGFloat.pi / 2).scaledBy(x: scale, y: scale)
         }
+        animator.pausesOnCompletion = true
         return square
     }()
     
     lazy var slider: UISlider = {
         let slider = UISlider()
-        slider.frame = CGRect(
-            x: view.layoutMargins.left,
-            y: square.bounds.width * 1.5 + 120,
-            width: view.frame.width - view.layoutMargins.left - view.layoutMargins.right,
-            height: 20
-        )
         slider.thumbTintColor = .systemOrange
         slider.minimumTrackTintColor = .systemOrange
         slider.maximumTrackTintColor = .systemGray4
@@ -71,6 +56,17 @@ class ViewController: UIViewController {
     
     private func setupLayout() {
         view.subviews.forEach { $0.translatesAutoresizingMaskIntoConstraints = false }
+        
+        NSLayoutConstraint.activate([
+            square.heightAnchor.constraint(equalToConstant: squareSide),
+            square.widthAnchor.constraint(equalToConstant: squareSide),
+            square.topAnchor.constraint(equalTo: view.layoutMarginsGuide.topAnchor, constant: 50),
+            square.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
+
+            slider.topAnchor.constraint(equalTo: square.bottomAnchor, constant: 50),
+            slider.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
+            slider.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor)
+        ])
     }
     
     @objc func changeValue (sender: UISlider) {
@@ -78,9 +74,6 @@ class ViewController: UIViewController {
     }
     
     @objc func releaseSlider () {
-        if animator.isRunning {
-            slider.value = Float(animator.fractionComplete)
-        }
         slider.setValue(slider.maximumValue, animated: true)
         animator.startAnimation()
     }
